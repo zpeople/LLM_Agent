@@ -25,6 +25,8 @@ from crewai import Task, Crew, Process
 from estate_agents import RealEstateAgents 
 from crewai.tasks.conditional_task import ConditionalTask
 from crewai.tasks.task_output import TaskOutput
+from tool import skip_execution
+IS_SKIP=True
 
 
 # In[ ]:
@@ -166,6 +168,7 @@ class RealEstateCrew:
 # In[ ]:
 
 
+@skip_execution(IS_SKIP)
 def test_crew():
      # 用户查询示例
     user_queries = [
@@ -187,6 +190,7 @@ def test_crew():
 # In[ ]:
 
 
+@skip_execution(IS_SKIP)
 def start_real_estate_chat():
     print("欢迎来到房产智能咨询助手！请输入您的问题（输入 '退出' 结束对话）")
     user_query=None

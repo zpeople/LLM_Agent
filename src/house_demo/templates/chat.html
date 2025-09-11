@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房产智能咨询助手</title>
+    <!-- 1. 引入 Markdown 转换库（使用开源的 marked.js，无需后端额外处理） -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { 
+            max-width: 800px; 
+            margin: 20px auto; 
+            font-family: Arial, sans-serif; 
+            padding: 0 10px; 
+        }
+        #chat-container { 
+            height: 500px; 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            padding: 10px; 
+            overflow-y: auto; 
+            margin-bottom: 10px; 
+            background-color: #f9f9f9; 
+        }
+        .message { 
+            margin: 10px 0; 
+            padding: 12px 16px; /* 增加内边距，适配 Markdown 内容 */
+            border-radius: 16px; 
+            max-width: 70%; 
+            word-wrap: break-word; 
+            line-height: 1.6; /* 优化文本行高 */
+        }
+        .user-message { 
+            background-color: #007bff; 
+            color: white; 
+            margin-left: auto; 
+        }
+        .assistant-message { 
+            background-color: #e9ecef; 
+            color: #333; 
+            margin-right: auto; 
+        }
+
+        /* 2. Markdown 基础样式（适配标题、列表、表格等） */
+        /* 标题样式 */
+        .message h1 { font-size: 1.5em; margin: 0.5em 0; line-height: 1.4; }
+        .message h2 { font-size: 1.3em; margin: 0.4em 0; line-height: 1.4; }
+        .message h3 { font-size: 1.1em; margin: 0.3em 0; line-height: 1.4; }
+        /* 列表样式 */
+        .message ul { margin: 0.5em 0; padding-left: 1.5em; }
+        .message li { margin: 0.3em 0; }
+        /* 表格样式 */
+        .message table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+        .message th, .message td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+        .message th { background-color: #f2f2f2; color: #333; }
+        /* 代码块样式 */
+        .message pre { background-color: #f5f5f5; padding: 8px; border-radius: 4px; overflow-x: auto; }
+        .message code { background-color: #f5f5f5; padding: 2px 4px; border-radius: 4px; font-family: monospace; }
+        /* 引用样式 */
+        .message blockquote { border-left: 3px solid #007bff; padding-left: 10px; margin: 0.5em 0; color: #666; }
+
+        #input-container { 
+            display: flex; 
+            gap: 10px; 
+        }
+        #user-input { 
+            flex: 1; 
+            padding: 8px; 
+            font-size: 16px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+        }
+        #send-btn { 
+            padding: 8px 20px; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            transition: background-color 0.3s; 
+        }
+        #send-btn:hover { 
+            background-color: #0056b3; 
+        }
+        #send-btn:disabled { 
+            background-color: #6c757d; 
+            cursor: not-allowed; 
+        }
+        .status-indicator {
+            color: #666;
+            font-size: 0.9em;
+            margin: 5px 0;
+            display: none; 
+        }
+    </style>
+</head>
+<body>
+    <h1>房产智能咨询助手</h1>
+    <div class="status-indicator" id="status">正在连接服务器...</div>
+    <div id="chat-container"></div>
+    <div id="input-container">
+        <input type="text" id="user-input" placeholder="请输入您的问题（支持Markdown格式，如#标题、-列表）...">
+        <button id="send-btn">发送</button>
+    </div>
+
+    <script>
+        // 生成唯一的会话ID
+        const sessionId = 'user_' + Math.random().toString(36).substr(2, 9);
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const statusIndicator = document.getElementById('status');
+        let isProcessing = false;
+
+        // 检查API是否可用
+        async function checkApiAvailability() {
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'OPTIONS',
+                    timeout: 5000
+                });
+                if (response.ok) {
+                    statusIndicator.textContent = "服务器已连接";
+                    statusIndicator.style.color = "#28a745";
+                    setTimeout(() => statusIndicator.style.display = "none", 2000);
+                    return true;
+                } else {
+                    throw new Error("服务器响应不正常");
+                }
+            } catch (error) {
+                statusIndicator.textContent = "服务器连接失败，请检查服务是否启动";
+                statusIndicator.style.color = "#dc3545";
+                statusIndicator.style.display = "block";
+                console.error("API检查失败:", error);
+                return false;
+            }
+        }
+
+        // 3. 核心修改：Markdown 转换函数（使用 marked.js 安全转换）
+        function markdownToHtml(markdownText) {
+            // 配置 marked.js：禁用HTML（防止XSS攻击），只保留Markdown语法
+            marked.setOptions({
+                sanitize: true, // 安全模式：过滤掉原始HTML标签
+                breaks: true,   // 自动将换行符转为<br>
+                gfm: true       // 支持GitHub风格的Markdown
+            });
+            return marked.parse(markdownText); // 将Markdown转为HTML
+        }
+
+        // 发送消息函数（不变，后端无需修改，只需返回Markdown格式文本）
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message || isProcessing) return;
+
+            isProcessing = true;
+            sendBtn.disabled = true;
+            sendBtn.textContent = "发送中...";
+            
+            // 添加用户消息（用户输入也支持Markdown）
+            addMessageToUI(message, 'user');
+            userInput.value = '';
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        session_id: sessionId, 
+                        message: message 
+                    }),
+                    timeout: 15000
+                });
+
+                if (!response.ok) {
+                    throw new Error(`服务器错误: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                // 添加助手回复（将Markdown转为HTML渲染）
+                addMessageToUI(data.response, 'assistant');
+
+                if (data.is_quit) {
+                    userInput.disabled = true;
+                    sendBtn.disabled = true;
+                    sendBtn.textContent = "已结束";
+                }
+            } catch (error) {
+                addMessageToUI('抱歉，服务暂时不可用，请稍后再试。', 'assistant');
+                console.error("发送消息失败:", error);
+            } finally {
+                isProcessing = false;
+                sendBtn.disabled = false;
+                sendBtn.textContent = "发送";
+            }
+        }
+
+        // 4. 核心修改：渲染消息时支持Markdown（替换 textContent 为 innerHTML）
+        function addMessageToUI(text, role) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}-message`;
+            
+            // 将Markdown转为HTML后渲染（而非直接用textContent）
+            const htmlContent = markdownToHtml(text);
+            messageDiv.innerHTML = htmlContent;
+            
+            chatContainer.appendChild(messageDiv);
+            // 滚动到底部
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // 绑定事件（不变）
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // 页面初始化（不变）
+        window.addEventListener('DOMContentLoaded', () => {
+            // 初始欢迎消息也支持Markdown
+            const welcomeMsg = `# 欢迎来到房产智能咨询助手！😊😊😊
+有什么需要咨询的（输入"退出"结束对话）`;
+            addMessageToUI(welcomeMsg, 'assistant');
+            checkApiAvailability();
+            userInput.focus();
+        });
+    </script>
+</body>
+</html>
