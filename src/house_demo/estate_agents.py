@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[7]:
+# In[14]:
 
 
 import os
@@ -24,11 +24,11 @@ if project_dir not in sys.path:
 from crewai import Agent,LLM
 import estate_tools  as ET
 from dotenv import load_dotenv  
-from pathlib import Path
-import yaml
+from tools.tools_wrapper import get_yaml_config
+from crewai.project import CrewBase
 
 
-# In[9]:
+# In[16]:
 
 
 load_dotenv()
@@ -47,31 +47,13 @@ llm = LLM(
         )
 
 
-# In[10]:
+# In[ ]:
 
 
-def get_agents_config(agents_config_path="./config/agents.yaml"):
-    def load_yaml(config_path: Path):
-        try:
-            with open(config_path, "r", encoding="utf-8") as file:
-                return yaml.safe_load(file)
-        except FileNotFoundError:
-            print(f"File not found: {config_path}")
-            raise
-    try:
-        agents_config = load_yaml(agents_config_path)
-    except FileNotFoundError:
-        print(
-            f"Agent config file not found at {agents_config_path}. "
-            "Proceeding with empty agent configurations."
-        )
-        agents_config = {}
-    return agents_config
-library_name="hahha"
-agents_config =get_agents_config()
+agents_config =get_yaml_config("config/agents.yaml")
 
 
-# In[11]:
+# In[18]:
 
 
 # 定义智能体

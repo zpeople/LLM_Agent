@@ -25,7 +25,8 @@ from crewai import Task, Crew, Process
 from estate_agents import RealEstateAgents 
 from crewai.tasks.conditional_task import ConditionalTask
 from crewai.tasks.task_output import TaskOutput
-from tool import skip_execution
+from tools.tool import skip_execution
+from tools_wrapper import get_yaml_config
 IS_SKIP=True
 
 
@@ -36,11 +37,13 @@ class RealEstateCrew:
     def __init__(self, user_query):
         self.user_query = user_query
         self.output_path ="./result.md"
+        self.task_configs=get_yaml_config("config/tasks.yaml")
+        self.history = []
+
         self.agents = self._initialize_agents()
         self.intent_task =self._update_intent_task()
         self.tasks = self._create_tasks()
         self.crew = self._create_crew()
-        self.history = []
 
     def _initialize_agents(self):
         """初始化所有智能体"""
@@ -207,10 +210,4 @@ def start_real_estate_chat():
         print(f"助手：{response}\n")
 
 start_real_estate_chat()
-
-
-# In[ ]:
-
-
-
 
