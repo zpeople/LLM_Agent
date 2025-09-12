@@ -1,0 +1,15 @@
+accelerate==1.10.1
+autogen-agentchat==0.7.4
+crewai==0.177.0
+fastapi==0.116.1
+langchain==0.3.27
+langchain-community==0.3.29
+numpy==2.2.6
+openai==1.99.5
+pandas==2.3.2
+pypdf==5.9.0
+scikit-learn==1.7.2
+torch==2.8.0
+transformers==4.56.1
+triton==3.4.0
+uvicorn==0.35.0
