@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 import os
@@ -18,7 +18,7 @@ if project_dir not in sys.path:
     sys.path.append(project_dir)
 
 
-# In[ ]:
+# In[2]:
 
 
 from crewai import Task, Crew, Process
@@ -57,7 +57,10 @@ class RealEstateCrew:
     def _update_intent_task(self):
         # 任务1：识别用户意图 
         identify_intent = Task(
-            description=f"分析用户查询: '{self.user_query}'，确定用户的具体意图。可能的意图包括：购房、租房、查询特定区域房价、了解市场趋势、计算房贷等。",
+            description=f"分析用户查询: '{self.user_query}'，确定用户的具体意图。 \
+            可能的意图包括：购房、租房、查询特定区域房价、了解市场趋势、计算房贷等。\
+            如果需要调用工具搜索类似的对话信息，来帮助你判断用户的意图。 \
+            ",
             expected_output="明确的用户意图分类，例如：'用户想查询某地的住宅房价'，",
             agent=self.agents["intent_recognizer"]
         )
@@ -187,7 +190,7 @@ def test_crew():
     print("\n===== 最终回答 =====")
     print(result)
 
-# test_crew()
+test_crew()
 
 
 # In[ ]:

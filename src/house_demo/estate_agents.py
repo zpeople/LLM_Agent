@@ -24,7 +24,7 @@ if project_dir not in sys.path:
 from crewai import Agent,LLM
 import estate_tools  as ET
 from dotenv import load_dotenv  
-from tools.tools_wrapper import get_yaml_config
+from tools_wrapper import get_yaml_config
 from crewai.project import CrewBase
 
 
@@ -53,7 +53,7 @@ llm = LLM(
 agents_config =get_yaml_config("config/agents.yaml")
 
 
-# In[18]:
+# In[ ]:
 
 
 # 定义智能体
@@ -64,7 +64,7 @@ class RealEstateAgents:
         return Agent(
                     config=agents_config['intent'], 
                     llm=llm,
-                    tools=[],  # 意图识别不需要工具，仅分析文本
+                    tools=[ET.intent_recognition_tool],  
                     verbose=True,
                     allow_delegation=False
                 )

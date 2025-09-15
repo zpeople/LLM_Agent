@@ -23,8 +23,9 @@ if project_dir not in sys.path:
 
 
 from datetime import datetime
-from tool import skip_execution
+from tools.tool import skip_execution
 from crewai.tools import BaseTool,tool
+from rag_data import get_serarch
 
 
 # In[3]:
@@ -33,7 +34,49 @@ from crewai.tools import BaseTool,tool
 IS_SKIP =True
 
 
-# In[4]:
+# In[6]:
+
+
+@tool("intent_recognition_tool")
+def intent_recognition_tool(query: str):
+    """根据用户输入查询相关对话，识别用户意图"""
+    results = get_serarch(query=query,top_k=3)
+    return results,  # 返回最相关的对话片段
+
+
+# In[8]:
+
+
+intent_recognition_tool.run("买套二的")
+
+
+# In[ ]:
+
+
+# 查询房产市场趋势
+@tool("get_market_trends")
+def get_market_trends(location, months=6):
+    """查询指定区域最近几个月的房产市场趋势"""
+    print(f"[工具调用] 查询市场趋势: 位置={location}, 时长={months}个月")
+    
+    # 模拟市场趋势数据
+    trends = []
+    current_date = datetime.now()
+    for i in range(months, 0, -1):
+        month_str = (current_date.month - i) % 12 + 1
+        year_str = current_date.year
+        if month_str > current_date.month:
+            year_str -= 1
+        trends.append({
+            "month": f"{year_str}-{month_str:02d}",
+            "average_price": 1000000 + i * 50000,
+            "change_percent": round(i * 0.5, 2)
+        })
+    
+    return trends
+
+
+# In[ ]:
 
 
 # 查询房产信息
@@ -66,6 +109,10 @@ def query_property_info(location, property_type, min_price, max_price):
             "description": f"{location}高新区，环境优美，适合家庭居住"
         }
     ]
+
+
+# In[ ]:
+
 
 # 计算房贷
 @tool("calculate_mortgage")
@@ -183,28 +230,6 @@ def calculate_mortgage(price, down_payment_percent, loan_term_years, interest_ra
         result["payment_schedule"] = payment_schedule
     
     return result
-
-# 查询房产市场趋势
-@tool("get_market_trends")
-def get_market_trends(location, months=6):
-    """查询指定区域最近几个月的房产市场趋势"""
-    print(f"[工具调用] 查询市场趋势: 位置={location}, 时长={months}个月")
-    
-    # 模拟市场趋势数据
-    trends = []
-    current_date = datetime.now()
-    for i in range(months, 0, -1):
-        month_str = (current_date.month - i) % 12 + 1
-        year_str = current_date.year
-        if month_str > current_date.month:
-            year_str -= 1
-        trends.append({
-            "month": f"{year_str}-{month_str:02d}",
-            "average_price": 1000000 + i * 50000,
-            "change_percent": round(i * 0.5, 2)
-        })
-    
-    return trends
 
 
 # In[5]:
